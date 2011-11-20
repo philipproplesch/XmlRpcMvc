@@ -1,0 +1,19 @@
+XmlRpcMvc
+=========
+
+Last update: 2011/11/17
+
+
+1. Enable auto-discovery
+========================
+Some applications (e.g. WLW) are able to discover the XML-RPC endpoint of your web application automatically.
+To enable this feature, you have to add the following line to the <head> section of your layout:
+
+	<link rel="EditURI" type="application/rsd+xml" title="RSD" href="@Url.Action("Rsd", "XmlRpc")" />
+
+
+
+---
+
+Philip Proplesch
+@philipproplesch

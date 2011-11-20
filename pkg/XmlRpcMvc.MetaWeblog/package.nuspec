@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>XmlRpcMvc.MetaWeblog</id>
+    <version>0.1</version>
+    <title>XmlRpcMvc.MetaWeblog</title>
+    <authors>Philip Proplesch</authors>
+    <owners>Philip Proplesch</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>XmlRpcMvc.MetaWeblog is a sample implementation for the MetaWeblog API by using the XmlRpcMvc package.</description>
+    <dependencies>
+      <dependency id="XmlRpcMvc" version="0.1" />
+    </dependencies>
+  </metadata>
+</package>

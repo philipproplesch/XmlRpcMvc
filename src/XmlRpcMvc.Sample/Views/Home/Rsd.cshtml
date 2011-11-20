@@ -1,0 +1,15 @@
+﻿@{
+    Layout = "";
+}
+
+<?xml version="1.0" encoding="utf-8" ?>
+<rsd xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    version="1.0" xmlns="http://archipelago.phrasewise.com/rsd">
+  <service xmlns="">
+    <engineName>Typewriter</engineName>
+    <homePageLink>@Url.Action("Index")</homePageLink>
+    <apis>
+      <api name="MetaWeblog" preferred="true" apiLink="@Url.Action("Endpoint", "XmlRpc")" blogID="123" />
+    </apis>
+  </service>
+</rsd>
