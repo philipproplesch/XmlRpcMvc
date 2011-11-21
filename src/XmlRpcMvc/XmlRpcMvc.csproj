@@ -67,8 +67,8 @@
   
   -->
   <Target Name="AfterBuild">
-    <Copy SourceFiles="$(OutputPath)\$(AssemblyName).dll" DestinationFolder="..\..\pkg\lib\NET40\" />
+    <Copy SourceFiles="$(OutputPath)\$(AssemblyName).dll" DestinationFolder="..\..\pkg\XmlRpcMvc\lib\NET40\" />
     <Exec Command="NuGet Pack ..\..\..\pkg\XmlRpcMvc\package.nuspec" WorkingDirectory="..\..\lib\NuGet.CommandLine.1.5.21005.9019\tools\" />
-	<Exec Command="NuGet Pack ..\..\..\pkg\XmlRpcMvc.MetaWeblog\package.nuspec" WorkingDirectory="..\..\lib\NuGet.CommandLine.1.5.21005.9019\tools\" />
+    <Exec Command="NuGet Pack ..\..\..\pkg\XmlRpcMvc.MetaWeblog\package.nuspec" WorkingDirectory="..\..\lib\NuGet.CommandLine.1.5.21005.9019\tools\" />
   </Target>
 </Project>

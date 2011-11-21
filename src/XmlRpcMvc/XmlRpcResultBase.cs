@@ -11,7 +11,7 @@ namespace XmlRpcMvc
         {
             var request = context.HttpContext.Request;
             var requestInfo =
-                XmlRpcRequestParser.GetRequestInformation2(
+                XmlRpcRequestParser.GetRequestInformation(
                     request.InputStream);
 
             if (string.IsNullOrWhiteSpace(requestInfo.MethodName))
