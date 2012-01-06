@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace XmlRpcMvc.Extensions
 {
@@ -22,14 +23,33 @@ namespace XmlRpcMvc.Extensions
                     }
                     catch (Exception)
                     {
-                        value = (string) value == "1";
+                        value = (string)value == "1";
                     }
                     break;
                 case "dateTime.iso8601":
-                    value = Convert.ToDateTime(value);
+                    DateTime dateTime;
+                    if (DateTime.TryParse(value.ToString(), out dateTime))
+                    {
+                        value = dateTime;
+                    }
+                    // HACK: Invalid according to the specs, but submitted by the WLW.
+                    else if (DateTime.TryParseExact(
+                                value.ToString(),
+                                "yyyyMMddTHH:mm:ss",
+                                CultureInfo.InvariantCulture,
+                                DateTimeStyles.None,
+                                out dateTime))
+                    {
+                        value = dateTime;
+                    }
+                    else
+                    {
+                        throw new FormatException(
+                            "Unable to parse the passed date.");
+                    }
                     break;
                 case "base64":
-                    value = Convert.FromBase64String((string) value);
+                    value = Convert.FromBase64String((string)value);
                     break;
                 default:
                     value = Convert.ToString(value);
