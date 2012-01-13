@@ -137,7 +137,7 @@ namespace XmlRpcMvc
             }
         }
 
-        public static XmlRpcRequest GetRequestInformation2(Stream xml)
+        public static XmlRpcRequest GetRequestInformation(Stream xml)
         {
             var request = new XmlRpcRequest();
 
