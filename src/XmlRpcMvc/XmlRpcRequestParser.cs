@@ -16,36 +16,51 @@ namespace XmlRpcMvc
         private static readonly Type _s_rpcs = typeof(IXmlRpcService);
 
         private static readonly Func<Type, bool> _s_isRpcService =
-            type => type.IsClass && _s_rpcs.IsAssignableFrom(type);
+            type => _s_rpcs.IsAssignableFrom(type);
 
         private static readonly Func<MethodInfo, XmlRpcMethodAttribute>
             _s_getRpcAttribute =
                 method =>
-                    method.GetCustomAttributes(_s_rpca, false).
-                        Cast<XmlRpcMethodAttribute>().FirstOrDefault();
+                method
+                    .GetCustomAttributes(_s_rpca, true)
+                    .Cast<XmlRpcMethodAttribute>()
+                    .FirstOrDefault();
 
-        private static readonly Func<MethodInfo[], IEnumerable<XmlRpcMethodDescriptor>>
-            _s_getXmlRpcMethods = 
-                methods => 
-                    from method in methods
-                    let attribute = _s_getRpcAttribute(method)
-                    where attribute != null
-                    select
-                        new XmlRpcMethodDescriptor(
-                        attribute.MethodName,
-                        attribute.ResponseType,
-                        method);
+        private static readonly
+            Func<MethodInfo[], IEnumerable<XmlRpcMethodDescriptor>>
+            _s_getXmlRpcMethods =
+                methods =>
+                from method in methods
+                let attribute = _s_getRpcAttribute(method)
+                where attribute != null
+                select
+                    new XmlRpcMethodDescriptor(
+                    attribute.MethodName,
+                    attribute.ResponseType,
+                    method);
 
-        private static readonly Dictionary<string, XmlRpcMethodDescriptor> 
+        private static readonly Func<Type, Type>
+            _s_getImplementation =
+                contract => AppDomain.CurrentDomain.GetAssemblies()
+                                .SelectMany(assembly => assembly.GetTypes())
+                                .Where(type => !type.IsInterface)
+                                .FirstOrDefault(type => contract.IsAssignableFrom(type));
+
+        private static readonly Dictionary<string, XmlRpcMethodDescriptor>
             _s_rpcMethods =
-                AppDomain.CurrentDomain.GetAssemblies().SelectMany(
-                    assembly => 
-                        assembly.GetTypes().Where(_s_isRpcService).Select(
-                            type =>  type.GetMethods()
-                        ).SelectMany(_s_getXmlRpcMethods)
-                ).ToDictionary(desc=>desc.Name, desc => desc);
+                AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(
+                        assembly =>
+                        assembly
+                            .GetTypes()
+                            .Where(_s_isRpcService)
+                            .Select(type => type.GetMethods())
+                            .SelectMany(_s_getXmlRpcMethods)
+                    )
+                    .ToDictionary(desc => desc.Name, desc => desc);
 
-        public static XmlRpcMethodDescriptor GetRequestedMethod(XmlRpcRequest request)
+        public static XmlRpcMethodDescriptor GetRequestedMethod(
+            XmlRpcRequest request)
         {
             XmlRpcMethodDescriptor descriptor;
             _s_rpcMethods.TryGetValue(request.MethodName, out descriptor);
@@ -54,7 +69,7 @@ namespace XmlRpcMvc
 
         public static object ExecuteRequestedMethod(
             XmlRpcRequest request,
-            XmlRpcMethodDescriptor methodDescriptor, 
+            XmlRpcMethodDescriptor methodDescriptor,
             ControllerBase controller)
         {
             var parameters = new List<object>();
@@ -82,10 +97,17 @@ namespace XmlRpcMvc
                         var nameKey = property.GetSerializationName();
                         object value;
                         if (complexInstanceParameters.TryGetValue(
-                            nameKey, 
+                            nameKey,
                             out value))
                         {
-                            property.SetValue(complexInstance, value, null);
+                            try
+                            {
+                                property.SetValue(complexInstance, value, null);
+                            }
+                            catch (Exception)
+                            {
+                                property.SetValue(complexInstance, value.ToString(), null);
+                            }
                         }
                     }
 
@@ -93,11 +115,18 @@ namespace XmlRpcMvc
                 }
             }
 
+            var instanceType = method.DeclaringType;
 
-            var instance = 
-                controller.GetType() == method.DeclaringType
+            if (method.DeclaringType != null &&
+                method.DeclaringType.IsInterface)
+            {
+                instanceType = _s_getImplementation(method.DeclaringType);
+            }
+
+            var instance =
+                controller.GetType() == instanceType
                     ? controller
-                    : Activator.CreateInstance(method.DeclaringType);
+                    : Activator.CreateInstance(instanceType);
             try
             {
                 return method.Invoke(instance, parameters.ToArray());
@@ -108,21 +137,21 @@ namespace XmlRpcMvc
             }
         }
 
-        public static XmlRpcRequest GetRequestInformation(Stream xml)
+        public static XmlRpcRequest GetRequestInformation2(Stream xml)
         {
             var request = new XmlRpcRequest();
 
             var xmlDocument = new XmlDocument();
             xmlDocument.Load(xml);
 
-            var methodName = 
+            var methodName =
                 xmlDocument.SelectSingleNode("methodCall/methodName");
             if (methodName != null)
             {
                 request.MethodName = methodName.InnerText;
             }
 
-            var parameters = 
+            var parameters =
                 xmlDocument.SelectNodes("methodCall/params/param/value/*");
             if (parameters != null)
             {
@@ -137,7 +166,7 @@ namespace XmlRpcMvc
         }
 
         private static object GetMethodMember(
-            XmlRpcRequest request, 
+            XmlRpcRequest request,
             XmlNode node)
         {
             switch (node.Name)
@@ -154,7 +183,7 @@ namespace XmlRpcMvc
         }
 
         private static Dictionary<string, object> GetMethodStructMember(
-            XmlRpcRequest request, 
+            XmlRpcRequest request,
             XmlNode node)
         {
             var xpath = node.GetXPath();

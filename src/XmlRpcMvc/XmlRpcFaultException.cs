@@ -5,7 +5,6 @@ namespace XmlRpcMvc
 {
     public class XmlRpcFaultException : Exception
     {
-
         public XmlRpcFaultException(int code, string message)
             : base(message)
         {

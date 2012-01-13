@@ -1,8 +1,10 @@
 ﻿using System;
-using System.Globalization;
+using System.Collections.Generic;
 
 namespace XmlRpcMvc.Extensions
 {
+    using System.Globalization;
+
     internal static class ObjectExtensions
     {
         public static object ConvertTo(this object value, string typeName)
@@ -27,25 +29,33 @@ namespace XmlRpcMvc.Extensions
                     }
                     break;
                 case "dateTime.iso8601":
+                    var formats =
+                        new List<string>
+                            {
+                                "yyyyMMddTHH:mm:ss",
+                                "yyyyMMddTHH:mm:ssZ"
+                            };
+
                     DateTime dateTime;
                     if (DateTime.TryParse(value.ToString(), out dateTime))
                     {
                         value = dateTime;
                     }
-                    // HACK: Invalid according to the specs, but submitted by the WLW.
-                    else if (DateTime.TryParseExact(
-                                value.ToString(),
-                                "yyyyMMddTHH:mm:ss",
-                                CultureInfo.InvariantCulture,
-                                DateTimeStyles.None,
-                                out dateTime))
-                    {
-                        value = dateTime;
-                    }
                     else
                     {
-                        throw new FormatException(
-                            "Unable to parse the passed date.");
+                        foreach (var format in formats)
+                        {
+                            if (DateTime.TryParseExact(
+                                    value.ToString(),
+                                    format,
+                                    CultureInfo.InvariantCulture,
+                                    DateTimeStyles.None,
+                                    out dateTime))
+                            {
+                                value = dateTime;
+                                break;
+                            }
+                        }
                     }
                     break;
                 case "base64":

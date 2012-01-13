@@ -11,7 +11,7 @@ namespace XmlRpcMvc
         {
             var request = context.HttpContext.Request;
             var requestInfo =
-                XmlRpcRequestParser.GetRequestInformation(
+                XmlRpcRequestParser.GetRequestInformation2(
                     request.InputStream);
 
             if (string.IsNullOrWhiteSpace(requestInfo.MethodName))
@@ -40,8 +40,7 @@ namespace XmlRpcMvc
 
             var response = context.RequestContext.HttpContext.Response;
             response.ContentType = "text/xml";
-
-
+            
             var settings =
                 new XmlWriterSettings
                 {
