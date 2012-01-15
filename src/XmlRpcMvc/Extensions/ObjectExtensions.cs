@@ -18,9 +18,9 @@ namespace XmlRpcMvc.Extensions
                 case "boolean":
                     try
                     {
-                        value = Convert.ToBoolean(value);
+                        value = bool.Parse(value.ToString());
                     }
-                    catch (Exception)
+                    catch (FormatException)
                     {
                         value = (string)value == "1";
                     }

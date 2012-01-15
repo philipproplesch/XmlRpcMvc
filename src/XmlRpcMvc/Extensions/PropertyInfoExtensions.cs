@@ -35,17 +35,25 @@ namespace XmlRpcMvc.Extensions
             }
             catch
             {
-                var source = (object[])value;
-                var destinationType = instance.PropertyType.GetElementType();
+                if (instance.PropertyType.IsArray)
+                {
+                    var source = (object[])value;
+                    var destinationType = 
+                        instance.PropertyType.GetElementType();
 
-                var array =
-                    Array.CreateInstance(
-                        destinationType,
-                        source.Length);
+                    var array =
+                        Array.CreateInstance(
+                            destinationType,
+                            source.Length);
 
-                Array.Copy(source, array, source.Length);
+                    Array.Copy(source, array, source.Length);
 
-                instance.SetValue(obj, array, null);
+                    instance.SetValue(obj, array, null);    
+                }
+                else
+                {
+                    instance.SetValue(obj, value.ToString(), null);
+                }
             }
         }
     }
