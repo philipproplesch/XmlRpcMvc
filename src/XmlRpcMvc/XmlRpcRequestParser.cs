@@ -16,7 +16,8 @@ namespace XmlRpcMvc
         private static readonly Type _s_rpcs = typeof(IXmlRpcService);
 
         private static readonly Func<Type, bool> _s_isRpcService =
-            type => _s_rpcs.IsAssignableFrom(type);
+            type => (type.IsClass || type.IsInterface) &&
+                    _s_rpcs.IsAssignableFrom(type);
 
         private static readonly Func<MethodInfo, XmlRpcMethodAttribute>
             _s_getRpcAttribute =
@@ -79,35 +80,72 @@ namespace XmlRpcMvc
             for (var i = 0; i < requiredParameters.Length; i++)
             {
                 var parameter = requiredParameters[i];
-                if (parameter.ParameterType.IsPrimitive())
+                var type = parameter.ParameterType;
+
+                if (type.IsPrimitive())
                 {
                     parameters.Add(request.Parameters[i]);
+                }
+                else if (type.IsArray)
+                {
+                    var elementType = type.GetElementType();
+
+                    var arrayParameters =
+                        (object[])request.Parameters[i];
+
+                    var listType = typeof(List<>);
+                    var genericListType = listType.MakeGenericType(elementType);
+
+                    var list = Activator.CreateInstance(genericListType);
+
+                    foreach (Dictionary<string, object> values 
+                                in arrayParameters)
+                    {
+                        var element = Activator.CreateInstance(elementType);
+
+                        foreach (var property 
+                                    in element.GetType().GetProperties())
+                        {
+                            var nameKey = property.GetSerializationName();
+
+                            object value;
+                            if (values.TryGetValue(nameKey, out value))
+                            {
+                                property.SetValue(element, value);
+                            }
+                        }
+
+                        list.GetType()
+                            .GetMethod("Add")
+                            .Invoke(
+                                list,
+                                new[] {element});
+                    }
+
+                    parameters.Add(
+                        list.GetType()
+                            .GetMethod("ToArray")
+                            .Invoke(list, null));
                 }
                 else
                 {
                     var complexInstanceParameters =
-                        (Dictionary<string, object>)request.Parameters[i];
+                        (Dictionary<string, object>) request.Parameters[i];
 
                     var complexInstance =
-                        Activator.CreateInstance(parameter.ParameterType);
+                        Activator.CreateInstance(type);
 
                     foreach (var property in
                         complexInstance.GetType().GetProperties())
                     {
                         var nameKey = property.GetSerializationName();
+
                         object value;
                         if (complexInstanceParameters.TryGetValue(
                             nameKey,
                             out value))
                         {
-                            try
-                            {
-                                property.SetValue(complexInstance, value, null);
-                            }
-                            catch (Exception)
-                            {
-                                property.SetValue(complexInstance, value.ToString(), null);
-                            }
+                            property.SetValue(complexInstance, value);
                         }
                     }
 
@@ -127,6 +165,7 @@ namespace XmlRpcMvc
                 controller.GetType() == instanceType
                     ? controller
                     : Activator.CreateInstance(instanceType);
+
             try
             {
                 return method.Invoke(instance, parameters.ToArray());
@@ -172,7 +211,7 @@ namespace XmlRpcMvc
             switch (node.Name)
             {
                 case "array":
-                    return GetMethodArrayMember(node);
+                    return GetMethodArrayMember(request, node);
 
                 case "struct":
                     return GetMethodStructMember(request, node);
@@ -218,18 +257,58 @@ namespace XmlRpcMvc
             return null;
         }
 
-        private static object GetMethodArrayMember(XmlNode node)
+        private static object GetMethodArrayMember(
+            XmlRpcRequest request,
+            XmlNode node)
         {
             var xpath = node.GetXPath();
             var values = node.SelectNodes(string.Concat(xpath, "/data/value"));
 
+            var results = new List<object>();
+
             if (values != null)
             {
-                return values.Cast<XmlNode>()
-                    .Select(
-                        value =>
-                        (string)value.InnerText.ConvertTo(value.FirstChild.Name))
-                    .ToArray();
+                foreach (XmlNode value in values)
+                {
+                    if (value.FirstChild.Name.Equals("struct"))
+                    {
+                        results.Add(GetMethodMember(request, value.FirstChild));
+                    }
+                    else
+                    {
+                        results.Add(value.InnerText.ConvertTo(value.FirstChild.Name));
+                    }
+                }
+
+                //if (values
+                //    .Cast<XmlNode>()
+                //    .Any(x => x.FirstChild.Name.Equals("struct")))
+                //{
+                //    return values
+                //        .Cast<XmlNode>()
+                //        .Select(
+                //            value =>
+                //            GetMethodStructMember(
+                //                request,
+                //                value.FirstChild))
+                //        .ToArray();
+                //}
+
+                //return values.Cast<XmlNode>()
+                //    .Select(
+                //        value =>
+                //        (string) value.InnerText.ConvertTo(value.FirstChild.Name))
+                //    .ToArray();
+
+
+                // This works!!!
+                //return values.Cast<XmlNode>()
+                //    .Select(
+                //        value =>
+                //        (string)value.InnerText.ConvertTo(value.FirstChild.Name))
+                //    .ToArray();
+
+                return results.ToArray();
             }
 
             return null;

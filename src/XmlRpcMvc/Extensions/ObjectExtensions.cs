@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace XmlRpcMvc.Extensions
 {
-    using System.Globalization;
-
     internal static class ObjectExtensions
     {
         public static object ConvertTo(this object value, string typeName)
@@ -29,34 +26,7 @@ namespace XmlRpcMvc.Extensions
                     }
                     break;
                 case "dateTime.iso8601":
-                    var formats =
-                        new List<string>
-                            {
-                                "yyyyMMddTHH:mm:ss",
-                                "yyyyMMddTHH:mm:ssZ"
-                            };
-
-                    DateTime dateTime;
-                    if (DateTime.TryParse(value.ToString(), out dateTime))
-                    {
-                        value = dateTime;
-                    }
-                    else
-                    {
-                        foreach (var format in formats)
-                        {
-                            if (DateTime.TryParseExact(
-                                    value.ToString(),
-                                    format,
-                                    CultureInfo.InvariantCulture,
-                                    DateTimeStyles.None,
-                                    out dateTime))
-                            {
-                                value = dateTime;
-                                break;
-                            }
-                        }
-                    }
+                    value = ((string) value).ConvertToDateTime();
                     break;
                 case "base64":
                     value = Convert.FromBase64String((string)value);

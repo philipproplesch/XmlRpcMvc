@@ -24,5 +24,29 @@ namespace XmlRpcMvc.Extensions
                             ?? instance.Name;
         }
 
+        public static void SetValue(
+            this PropertyInfo instance,
+            object obj,
+            object value)
+        {
+            try
+            {
+                instance.SetValue(obj, value, null);
+            }
+            catch
+            {
+                var source = (object[])value;
+                var destinationType = instance.PropertyType.GetElementType();
+
+                var array =
+                    Array.CreateInstance(
+                        destinationType,
+                        source.Length);
+
+                Array.Copy(source, array, source.Length);
+
+                instance.SetValue(obj, array, null);
+            }
+        }
     }
 }
