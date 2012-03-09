@@ -1,12 +1,15 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>XmlRpcMvc</id>
-    <version>0.2.1</version>
-    <title>XmlRpcMvc</title>
+    <version>0.2.2</version>
     <authors>Philip Proplesch</authors>
     <owners>Philip Proplesch</owners>
+    <id>XmlRpcMvc</id>
+    <title>XmlRpcMvc</title>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>XmlRpcMvc helps you to handle XML-RPC requests within an ASP.NET MVC application.</description>
   </metadata>
+  <files>
+    <file src="..\..\src\XmlRpcMvc\bin\Release\XmlRpcMvc.dll" target="lib\net40\XmlRpcMvc.dll" />
+  </files>
 </package>

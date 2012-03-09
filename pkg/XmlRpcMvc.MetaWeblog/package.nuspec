@@ -1,12 +1,15 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <version>0.2</version>
+    <version>0.2.1</version>
     <authors>Philip Proplesch</authors>
     <owners>Philip Proplesch</owners>
     <dependencies>
       <dependency id="XmlRpcMvc" version="0.2.2" />
     </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System.Runtime.Serialization" targetFramework="" />
+    </frameworkAssemblies>
     <id>XmlRpcMvc.MetaWeblog</id>
     <title>XmlRpcMvc.MetaWeblog</title>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

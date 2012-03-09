@@ -1,6 +1,6 @@
 using System;
 using XmlRpcMvc;
-using XmlRpcMvc.Attributes;
+using XmlRpcMvc.Common;
 using $rootnamespace$.XmlRpc.Models;
 
 namespace $rootnamespace$.XmlRpc
