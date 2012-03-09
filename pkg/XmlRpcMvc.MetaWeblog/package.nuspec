@@ -1,15 +1,26 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>XmlRpcMvc.MetaWeblog</id>
-    <version>0.1</version>
-    <title>XmlRpcMvc.MetaWeblog</title>
+    <version>0.2</version>
     <authors>Philip Proplesch</authors>
     <owners>Philip Proplesch</owners>
+    <dependencies>
+      <dependency id="XmlRpcMvc" version="0.2.2" />
+    </dependencies>
+    <id>XmlRpcMvc.MetaWeblog</id>
+    <title>XmlRpcMvc.MetaWeblog</title>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>XmlRpcMvc.MetaWeblog is a sample implementation for the MetaWeblog API by using the XmlRpcMvc package.</description>
-    <dependencies>
-      <dependency id="XmlRpcMvc" version="0.1" />
-    </dependencies>
   </metadata>
+  <files>
+    <file src="content\App_Readme\XmlRpcMvc.readme.txt" target="content\App_Readme\XmlRpcMvc.readme.txt" />
+    <file src="content\Controllers\XmlRpcController.cs.pp" target="content\Controllers\XmlRpcController.cs.pp" />
+    <file src="content\XmlRpc\Models\BlogInfo.cs.pp" target="content\XmlRpc\Models\BlogInfo.cs.pp" />
+    <file src="content\XmlRpc\Models\CategoryInfo.cs.pp" target="content\XmlRpc\Models\CategoryInfo.cs.pp" />
+    <file src="content\XmlRpc\Models\MediaObject.cs.pp" target="content\XmlRpc\Models\MediaObject.cs.pp" />
+    <file src="content\XmlRpc\Models\MediaObjectInfo.cs.pp" target="content\XmlRpc\Models\MediaObjectInfo.cs.pp" />
+    <file src="content\XmlRpc\Models\PostInfo.cs.pp" target="content\XmlRpc\Models\PostInfo.cs.pp" />
+    <file src="content\XmlRpc\Models\UserInfo.cs.pp" target="content\XmlRpc\Models\UserInfo.cs.pp" />
+    <file src="content\XmlRpc\MetaWeblogApi.cs.pp" target="content\XmlRpc\MetaWeblogApi.cs.pp" />
+  </files>
 </package>

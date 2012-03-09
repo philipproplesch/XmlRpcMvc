@@ -37,34 +37,43 @@ namespace XmlRpcMvc
                 select
                     new XmlRpcMethodDescriptor(
                     attribute.MethodName,
+                    attribute.MethodDescription,
                     attribute.ResponseType,
                     method);
 
         private static readonly Func<Type, Type>
             _s_getImplementation =
                 contract => AppDomain.CurrentDomain.GetAssemblies()
+                                .Where(x => !x.GetName().Name.StartsWith("System.", StringComparison.OrdinalIgnoreCase))
                                 .SelectMany(assembly => assembly.GetTypes())
                                 .Where(type => !type.IsInterface)
                                 .FirstOrDefault(type => contract.IsAssignableFrom(type));
 
-        private static readonly Dictionary<string, XmlRpcMethodDescriptor>
-            _s_rpcMethods =
-                AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(
-                        assembly =>
-                        assembly
-                            .GetTypes()
-                            .Where(_s_isRpcService)
-                            .Select(type => type.GetMethods())
-                            .SelectMany(_s_getXmlRpcMethods)
-                    )
+        public static Dictionary<string, XmlRpcMethodDescriptor> GetMethods(
+            Type[] services)
+        {
+            var types =
+                services != null && services.Length > 0
+                    ? services
+                    : AppDomain.CurrentDomain
+                          .GetAssemblies()
+                          .SelectMany(x => x.GetTypes());
+
+            return
+                types
+                    .Where(_s_isRpcService)
+                    .Select(type => type.GetMethods())
+                    .SelectMany(_s_getXmlRpcMethods)
                     .ToDictionary(desc => desc.Name, desc => desc);
+        }
 
         public static XmlRpcMethodDescriptor GetRequestedMethod(
-            XmlRpcRequest request)
+            XmlRpcRequest request, Type[] services)
         {
+            var methods = GetMethods(services);
+
             XmlRpcMethodDescriptor descriptor;
-            _s_rpcMethods.TryGetValue(request.MethodName, out descriptor);
+            methods.TryGetValue(request.MethodName, out descriptor);
             return descriptor;
         }
 
@@ -98,12 +107,12 @@ namespace XmlRpcMvc
 
                     var list = Activator.CreateInstance(genericListType);
 
-                    foreach (Dictionary<string, object> values 
+                    foreach (Dictionary<string, object> values
                                 in arrayParameters)
                     {
                         var element = Activator.CreateInstance(elementType);
 
-                        foreach (var property 
+                        foreach (var property
                                     in element.GetType().GetProperties())
                         {
                             var nameKey = property.GetSerializationName();
@@ -119,7 +128,7 @@ namespace XmlRpcMvc
                             .GetMethod("Add")
                             .Invoke(
                                 list,
-                                new[] {element});
+                                new[] { element });
                     }
 
                     parameters.Add(
@@ -130,7 +139,7 @@ namespace XmlRpcMvc
                 else
                 {
                     var complexInstanceParameters =
-                        (Dictionary<string, object>) request.Parameters[i];
+                        (Dictionary<string, object>)request.Parameters[i];
 
                     var complexInstance =
                         Activator.CreateInstance(type);

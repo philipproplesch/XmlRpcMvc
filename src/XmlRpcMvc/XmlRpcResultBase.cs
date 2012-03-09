@@ -7,9 +7,42 @@ namespace XmlRpcMvc
 {
     public class XmlRpcResult : ActionResult
     {
+        private readonly Type[] _services;
+
+        public XmlRpcResult(params Type[] services)
+        {
+            _services = services;
+        }
+
+        private bool _generateServiceOverview = true;
+        public bool GenerateServiceOverview
+        {
+            get { return _generateServiceOverview; }
+            set { _generateServiceOverview = value; }
+        }
+
         public override void ExecuteResult(ControllerContext context)
         {
             var request = context.HttpContext.Request;
+
+            if (GenerateServiceOverview &&
+                request.HttpMethod.Equals(
+                    HttpVerbs.Get.ToString(), 
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                new XmlRpcServiceOverviewResult(GenerateServiceOverview, _services)
+                    .ExecuteResult(context);
+
+                return;
+            }
+
+            if (!request.HttpMethod.Equals(
+                    HttpVerbs.Post.ToString(),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException();
+            }
+
             var requestInfo =
                 XmlRpcRequestParser.GetRequestInformation(
                     request.InputStream);
@@ -20,8 +53,8 @@ namespace XmlRpcMvc
                     "XmlRpc call does not contain a method.");
             }
 
-            var methodInfo = 
-                XmlRpcRequestParser.GetRequestedMethod(requestInfo);
+            var methodInfo =
+                XmlRpcRequestParser.GetRequestedMethod(requestInfo, _services);
 
             if (methodInfo == null)
             {
@@ -34,20 +67,20 @@ namespace XmlRpcMvc
                         "'."));
             }
 
-            var result = 
+            var result =
                 XmlRpcRequestParser.ExecuteRequestedMethod(
                     requestInfo, methodInfo, context.Controller);
 
             var response = context.RequestContext.HttpContext.Response;
             response.ContentType = "text/xml";
-            
+
             var settings =
                 new XmlWriterSettings
                 {
                     OmitXmlDeclaration = true
                 };
 
-            using (var writer = 
+            using (var writer =
                 XmlWriter.Create(response.OutputStream, settings))
             {
                 if (methodInfo.ResponseType == XmlRpcResponseType.Wrapped)
@@ -60,14 +93,14 @@ namespace XmlRpcMvc
         }
 
         private static void WriteRawResponse(
-            XmlWriter output, 
+            XmlWriter output,
             dynamic result)
         {
             output.WriteStartDocument();
             {
                 output.WriteStartElement("response");
-                {            
-                    WriteObject(output, result);   
+                {
+                    WriteObject(output, result);
                 }
                 output.WriteEndElement();
             }
@@ -75,7 +108,7 @@ namespace XmlRpcMvc
         }
 
         private static void WriteWrappedResponse(
-            XmlWriter output, 
+            XmlWriter output,
             dynamic result)
         {
             output.WriteStartDocument();
