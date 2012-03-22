@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Web.Mvc;
 using System.Xml;
@@ -43,11 +44,22 @@ namespace XmlRpcMvc
 
         private static readonly Func<Type, Type>
             _s_getImplementation =
-                contract => AppDomain.CurrentDomain.GetAssemblies()
-                                .Where(x => !x.GetName().Name.StartsWith("System.", StringComparison.OrdinalIgnoreCase))
-                                .SelectMany(assembly => assembly.GetTypes())
-                                .Where(type => !type.IsInterface)
-                                .FirstOrDefault(type => contract.IsAssignableFrom(type));
+                contract =>
+                Directory.EnumerateFiles(
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin"), "*.dll")
+                    .Where(x => filterAssemblies(x))
+                    .SelectMany(path => Assembly.LoadFrom(path).GetTypes())
+                    .Where(type => !type.IsInterface)
+                    .FirstOrDefault(type => contract.IsAssignableFrom(type));
+
+        private static string[] blacklist = new[] { "System.", "Microsoft." };
+
+        private static readonly Func<string, bool> filterAssemblies =
+            assembly =>
+            !blacklist.Any(
+                x =>
+                Path.GetFileName(assembly)
+                    .StartsWith(x, StringComparison.OrdinalIgnoreCase));
 
         public static Dictionary<string, XmlRpcMethodDescriptor> GetMethods(
             Type[] services)
