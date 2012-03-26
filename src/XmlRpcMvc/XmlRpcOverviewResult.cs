@@ -7,12 +7,12 @@ using System.Web.UI;
 
 namespace XmlRpcMvc
 {
-    public class XmlRpcServiceOverviewResult : ContentResult
+    public class XmlRpcOverviewResult : ContentResult
     {
         private readonly bool _generateOverview;
         private readonly Type[] _services;
 
-        public XmlRpcServiceOverviewResult(
+        public XmlRpcOverviewResult(
             bool generateOverview, params Type[] services)
         {
             _generateOverview = generateOverview;

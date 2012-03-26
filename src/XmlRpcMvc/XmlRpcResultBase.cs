@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Web.Mvc;
 using System.Xml;
 using XmlRpcMvc.Extensions;
@@ -30,7 +31,7 @@ namespace XmlRpcMvc
                     HttpVerbs.Get.ToString(), 
                     StringComparison.OrdinalIgnoreCase))
             {
-                new XmlRpcServiceOverviewResult(GenerateServiceOverview, _services)
+                new XmlRpcOverviewResult(GenerateServiceOverview, _services)
                     .ExecuteResult(context);
 
                 return;
@@ -77,7 +78,9 @@ namespace XmlRpcMvc
             var settings =
                 new XmlWriterSettings
                 {
-                    OmitXmlDeclaration = true
+                    OmitXmlDeclaration = false,
+                    Encoding = new UTF8Encoding(false), // Get rid of BOM
+                    Indent = true,
                 };
 
             using (var writer =

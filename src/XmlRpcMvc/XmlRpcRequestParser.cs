@@ -11,16 +11,16 @@ using XmlRpcMvc.Extensions;
 
 namespace XmlRpcMvc
 {
-    internal static class XmlRpcRequestParser
+    public static class XmlRpcRequestParser
     {
-        private static readonly Type _s_rpca = typeof(XmlRpcMethodAttribute);
-        private static readonly Type _s_rpcs = typeof(IXmlRpcService);
+        internal static readonly Type _s_rpca = typeof(XmlRpcMethodAttribute);
+        internal static readonly Type _s_rpcs = typeof(IXmlRpcService);
 
-        private static readonly Func<Type, bool> _s_isRpcService =
+        internal static readonly Func<Type, bool> _s_isRpcService =
             type => (type.IsClass || type.IsInterface) &&
                     _s_rpcs.IsAssignableFrom(type);
 
-        private static readonly Func<MethodInfo, XmlRpcMethodAttribute>
+        internal static readonly Func<MethodInfo, XmlRpcMethodAttribute>
             _s_getRpcAttribute =
                 method =>
                 method
@@ -28,7 +28,7 @@ namespace XmlRpcMvc
                     .Cast<XmlRpcMethodAttribute>()
                     .FirstOrDefault();
 
-        private static readonly
+        internal static readonly
             Func<MethodInfo[], IEnumerable<XmlRpcMethodDescriptor>>
             _s_getXmlRpcMethods =
                 methods =>
@@ -42,7 +42,7 @@ namespace XmlRpcMvc
                     attribute.ResponseType,
                     method);
 
-        private static readonly Func<Type, Type>
+        internal static readonly Func<Type, Type>
             _s_getImplementation =
                 contract =>
                 Directory.EnumerateFiles(
@@ -52,11 +52,15 @@ namespace XmlRpcMvc
                     .Where(type => !type.IsInterface)
                     .FirstOrDefault(type => contract.IsAssignableFrom(type));
 
-        private static string[] blacklist = new[] { "System.", "Microsoft." };
+        internal static readonly string[] s_blacklist =
+            new[]
+                {
+                    "System.", "Microsoft.", "NHibernate."
+                };
 
-        private static readonly Func<string, bool> filterAssemblies =
+        internal static readonly Func<string, bool> filterAssemblies =
             assembly =>
-            !blacklist.Any(
+            !s_blacklist.Any(
                 x =>
                 Path.GetFileName(assembly)
                     .StartsWith(x, StringComparison.OrdinalIgnoreCase));
@@ -67,9 +71,10 @@ namespace XmlRpcMvc
             var types =
                 services != null && services.Length > 0
                     ? services
-                    : AppDomain.CurrentDomain
-                          .GetAssemblies()
-                          .SelectMany(x => x.GetTypes());
+                    : Directory.EnumerateFiles(
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin"), "*.dll")
+                          .Where(x => filterAssemblies(x))
+                          .SelectMany(path => Assembly.LoadFrom(path).GetTypes());
 
             return
                 types
@@ -79,7 +84,7 @@ namespace XmlRpcMvc
                     .ToDictionary(desc => desc.Name, desc => desc);
         }
 
-        public static XmlRpcMethodDescriptor GetRequestedMethod(
+        internal static XmlRpcMethodDescriptor GetRequestedMethod(
             XmlRpcRequest request, Type[] services)
         {
             var methods = GetMethods(services);
@@ -89,7 +94,7 @@ namespace XmlRpcMvc
             return descriptor;
         }
 
-        public static object ExecuteRequestedMethod(
+        internal static object ExecuteRequestedMethod(
             XmlRpcRequest request,
             XmlRpcMethodDescriptor methodDescriptor,
             ControllerBase controller)
@@ -105,7 +110,15 @@ namespace XmlRpcMvc
 
                 if (type.IsPrimitive())
                 {
-                    parameters.Add(request.Parameters[i]);
+                    try
+                    {
+                        var obj = Convert.ChangeType(request.Parameters[i], type);
+                        parameters.Add(obj);
+                    }
+                    catch (Exception)
+                    {
+                        parameters.Add(request.Parameters[i]);
+                    }
                 }
                 else if (type.IsArray)
                 {
@@ -189,6 +202,13 @@ namespace XmlRpcMvc
 
             try
             {
+                Trace.TraceInformation("XmlRpcMvc: Invoking method {0}", method.Name);
+
+                foreach (var parameter in parameters)
+                {
+                    Trace.TraceInformation("XmlRpcMvc: Passing {0} as parameter.", parameter);
+                }
+
                 return method.Invoke(instance, parameters.ToArray());
             }
             catch (XmlRpcFaultException exception)
@@ -197,7 +217,7 @@ namespace XmlRpcMvc
             }
         }
 
-        public static XmlRpcRequest GetRequestInformation(Stream xml)
+        internal static XmlRpcRequest GetRequestInformation(Stream xml)
         {
             var request = new XmlRpcRequest();
 
@@ -209,6 +229,7 @@ namespace XmlRpcMvc
             if (methodName != null)
             {
                 request.MethodName = methodName.InnerText;
+                Trace.TraceInformation("Incoming XML-RPC call for method: {0}", request.MethodName);
             }
 
             var parameters =
@@ -225,7 +246,7 @@ namespace XmlRpcMvc
             return request;
         }
 
-        private static object GetMethodMember(
+        internal static object GetMethodMember(
             XmlRpcRequest request,
             XmlNode node)
         {
@@ -242,7 +263,7 @@ namespace XmlRpcMvc
             }
         }
 
-        private static Dictionary<string, object> GetMethodStructMember(
+        internal static Dictionary<string, object> GetMethodStructMember(
             XmlRpcRequest request,
             XmlNode node)
         {
@@ -278,7 +299,7 @@ namespace XmlRpcMvc
             return null;
         }
 
-        private static object GetMethodArrayMember(
+        internal static object GetMethodArrayMember(
             XmlRpcRequest request,
             XmlNode node)
         {
@@ -289,17 +310,12 @@ namespace XmlRpcMvc
 
             if (values != null)
             {
-                foreach (XmlNode value in values)
-                {
-                    if (value.FirstChild.Name.Equals("struct"))
-                    {
-                        results.Add(GetMethodMember(request, value.FirstChild));
-                    }
-                    else
-                    {
-                        results.Add(value.InnerText.ConvertTo(value.FirstChild.Name));
-                    }
-                }
+                results.AddRange(
+                    values.Cast<XmlNode>().Select(
+                        value =>
+                        value.FirstChild.Name.Equals("struct")
+                            ? GetMethodMember(request, value.FirstChild)
+                            : value.InnerText.ConvertTo(value.FirstChild.Name)));
 
                 //if (values
                 //    .Cast<XmlNode>()
