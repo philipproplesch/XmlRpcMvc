@@ -115,6 +115,11 @@ namespace XmlRpcMvc
                         var obj = Convert.ChangeType(request.Parameters[i], type);
                         parameters.Add(obj);
                     }
+                    catch (ArgumentOutOfRangeException)
+                    {
+                        // Add the default value for the requested type.
+                        parameters.Add(Activator.CreateInstance(type));
+                    }
                     catch (Exception)
                     {
                         parameters.Add(request.Parameters[i]);
@@ -202,13 +207,11 @@ namespace XmlRpcMvc
 
             try
             {
-                Trace.TraceInformation("XmlRpcMvc: Invoking method {0}", method.Name);
-
-                foreach (var parameter in parameters)
-                {
-                    Trace.TraceInformation("XmlRpcMvc: Passing {0} as parameter.", parameter);
-                }
-
+                Trace.TraceInformation(
+                    "XmlRpcMvc: Invoking method {0} with '{1}'",
+                    method.Name,
+                    string.Join(", ", parameters));
+                
                 return method.Invoke(instance, parameters.ToArray());
             }
             catch (XmlRpcFaultException exception)

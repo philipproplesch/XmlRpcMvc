@@ -31,7 +31,8 @@ namespace XmlRpcMvc.Extensions
         {
             try
             {
-                instance.SetValue(obj, value, null);
+                //instance.SetValue(obj, value, null);
+                instance.SetValue(obj, Convert.ChangeType(value, instance.PropertyType), null);
             }
             catch
             {
