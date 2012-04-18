@@ -10,10 +10,24 @@ namespace XmlRpcMvc.Extensions
             {
                 case "int":
                 case "i4":
-                    value = Convert.ToInt32(value);
+                    try
+                    {
+                        value = Convert.ToInt32(value);
+                    }
+                    catch (Exception)
+                    {
+                        value = default(int);
+                    }
                     break;
                 case "double":
-                    value = Convert.ToDouble(value);
+                    try
+                    {
+                        value = Convert.ToDouble(value);
+                    }
+                    catch (Exception)
+                    {
+                        value = default(double);
+                    }
                     break;
                 case "boolean":
                     try

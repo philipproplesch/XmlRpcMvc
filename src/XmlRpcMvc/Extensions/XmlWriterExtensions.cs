@@ -16,7 +16,8 @@ namespace XmlRpcMvc.Extensions
             var type = value.GetType();
             if (type == TypeDef.Int)
             {
-                dataType = "i4";
+                //dataType = "i4";
+                dataType = "int";
             }
             else if (type == TypeDef.Double)
             {
