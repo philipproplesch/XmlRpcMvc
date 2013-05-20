@@ -23,11 +23,11 @@ namespace $rootnamespace$.Controllers
                     {
                         xmlWriter.WriteStartElement("engineName");
                         xmlWriter.WriteString("~ ENGINE NAME ~");
-                        xmlWriter.WriteEndDocument();
+                        xmlWriter.WriteEndElement();
 
                         xmlWriter.WriteStartElement("homePageLink");
                         xmlWriter.WriteString(Url.Action("Index", "Home"));
-                        xmlWriter.WriteEndDocument();
+                        xmlWriter.WriteEndElement();
 
                         xmlWriter.WriteStartElement("apis");
                         {
@@ -36,14 +36,14 @@ namespace $rootnamespace$.Controllers
                             xmlWriter.WriteAttributeString("preferred", "true");
                             xmlWriter.WriteAttributeString("apiLink", Url.Action("Endpoint", "XmlRpc"));
                             xmlWriter.WriteAttributeString("blogID", "123");
-                            xmlWriter.WriteEndDocument();
+                            xmlWriter.WriteEndElement();
                         }
-                        xmlWriter.WriteEndDocument();
+                        xmlWriter.WriteEndElement();
 
                     }
-                    xmlWriter.WriteEndDocument();
+                    xmlWriter.WriteEndElement();
                 }
-                xmlWriter.WriteEndDocument();
+                xmlWriter.WriteEndElement();
             }
             xmlWriter.WriteEndDocument();
 
